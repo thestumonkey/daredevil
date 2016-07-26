@@ -63,9 +63,12 @@ void setup()
 
 void loop()
 {
+  Serial.println("Measuring distance");
   measuredistance();
   printdistance();
+  Serial.println("Getting distance group");
   getdistancegroup();
+  Serial.println("Playing effect");
   playeffect();
  
   delay(100);
@@ -114,7 +117,7 @@ void measuredistance()
  duration = pulseIn(pingPin, HIGH);
  
  //Calculate the distance (in cm)
- distance = duration/58.2;
+ distance = duration/ 29 / 2;
 }
 
 void printdistance()
@@ -126,7 +129,9 @@ void printdistance()
  
  else 
  {
-   Serial.println(distance);
+   Serial.print("Distance: ");
+   Serial.print(distance);
+   Serial.println(" cm");
  }
 }
 
@@ -161,6 +166,9 @@ void getdistancegroup()
    {
      distancegroup = 6;
    }
+
+   Serial.print("Distancegroup: ");
+   Serial.println (distancegroup);
 }
 
 void playeffect()
