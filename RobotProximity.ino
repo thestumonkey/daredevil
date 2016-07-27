@@ -19,7 +19,7 @@
 Metro timer( 2000, 1 );
 Motor motorz = Motor();
 
-int maximumRange = 200;             // Maximum range needed
+int maximumRange = 150;             // Maximum range needed
 int minimumRange = 0;               // Minimum range needed
 int distancegroup, measurecount;
 
@@ -44,22 +44,25 @@ void setup()
 
 void loop()
 {
+  long distance;
+  int distancegroup;
 //  Serial.println("-Measuring distance");
-  long distance = measuredistance();
+  distance = measuredistance();
+//  distance = getLongDistance();
   printdistance(distance);
-//  Serial.println("-Getting distance group");
-  getdistancegroup(distance);
-//  Serial.println("-Playing effect");
-  playeffect();
+//  distancegroup = getdistancegroup(distance);
+  distancegroup = getLongDistanceGroup(distance);
+//distancegroup = getMediumDistanceGroup(distance);
+  playeffect(distancegroup);
 //  long long_distance = getLongDistance();
  
-  delay(500);
+  delay(10);
   
 }
 
 void setupPins()
 {
-	 pinMode( LRA_SEL,  OUTPUT ); // Output for LRA  (0 = connected)
+	pinMode( LRA_SEL,  OUTPUT ); // Output for LRA  (0 = connected)
   pinMode( ERM_SEL, OUTPUT ); // Output for ERM  (0 = connected)
   pinMode( GRIP_SEL,  OUTPUT ); // Output for GRIP (0 = connected)
   pinMode( SRC_SEL, OUTPUT ); // Output for switching DRV(1) or MOSFET(0)
@@ -114,19 +117,24 @@ long measuredistance()
  return distance;
 }
 
+void read_analog_sensor () 
+{
+  const int anPin = 2;
+  pinMode(anPin, INPUT);
+  long anVolt = analogRead(anPin);
+  Serial.print("volt: ");
+  Serial.println(anVolt*5);
+}
+
 long getLongDistance()
 {
-  const int analogPin = 1;
-  const int configPin = 6;
-  const int digitalPin = 7;
-  digitalWrite(configPin, HIGH);
-  int digital = digitalRead(digitalPin);
-  Serial.print("EZ-digital: ");
-  Serial.println(digital);
-  int analog = analogRead(analogPin);
-  Serial.print("EZ-analog: ");
-  Serial.println(analog);
-  
+  Serial.print("digital: ");
+  const int pwPin1 = 11;
+  pinMode(pwPin1, INPUT);
+  long sensor = pulseIn(pwPin1, HIGH);
+  long distance = sensor/ 29 / 2;
+  return distance;
+//  Serial.println(distance);
 }
 
 void printdistance(long distance)
@@ -144,110 +152,202 @@ void printdistance(long distance)
 // }
 }
 
-void getdistancegroup(long distance)
+int getdistancegroup(long distance)
 {
-   if (0 <= distance && distance <= 5)
+   if (0 <= distance && distance <= 20)
    {
      distancegroup = 1;
    }
    
-  else if (6 <= distance && distance <= 10)
+  else if (20 <= distance && distance <= 45)
    {
      distancegroup = 2;
    }
    
-   else if (11 <= distance && distance <= 15)
+   else if (45 <= distance && distance <= 65)
    {
      distancegroup = 3;
    }
    
-  else if (16 <= distance && distance <= 20)
+  else if (65 <= distance && distance <= 90)
    {
      distancegroup = 4;
    }
 
-  else if (21 <= distance && distance <= 30)
+  else if (90 <= distance && distance <= 110)
    {
      distancegroup = 5;
    }
    
-  else if (30 <= distance)
+  else if (110 <= distance && distance <= 130)
    {
      distancegroup = 6;
    }
-
-   Serial.print("Distancegroup: ");
-   Serial.println (distancegroup);
+  else if (130 <= distance)
+   {
+     distancegroup = 0;
+   }
+    return distancegroup;
+//   Serial.print("Distancegroup: ");
+//   Serial.println (distancegroup);
 }
 
-void playeffect()
+int getLongDistanceGroup(long distance)
 {
+   if (0 <= distance && distance <= 100)
+   {
+     distancegroup = 1;
+   }
+   
+  else if (100 <= distance && distance <= 150)
+   {
+     distancegroup = 2;
+   }
+   
+   else if (150 <= distance && distance <= 200)
+   {
+     distancegroup = 3;
+   }
+   
+  else if (200 <= distance && distance <= 250)
+   {
+     distancegroup = 4;
+   }
+
+  else if (250 <= distance && distance <= 300)
+   {
+     distancegroup = 5;
+   }
+   
+//  else if (250 <= distance && distance <= 300)
+//   {
+//     distancegroup = 6;
+//   }
+  else if (130 <= distance)
+   {
+     distancegroup = 0;
+   }
+   Serial.print("Distancegroup: ");
+   Serial.println (distancegroup);
+  return distancegroup;
+
+}
+
+int getMediumDistanceGroup(long distance)
+{
+   if (0 <= distance && distance <= 100)
+   {
+     distancegroup = 1;
+   }
+   
+  else if (100 <= distance && distance <= 150)
+   {
+     distancegroup = 2;
+   }
+   
+   else if (150 <= distance && distance <= 200)
+   {
+     distancegroup = 3;
+   }
+   
+  else if (200 <= distance && distance <= 250)
+   {
+     distancegroup = 4;
+   }
+
+  else if (250 <= distance && distance <= 300)
+   {
+     distancegroup = 5;
+   }
+   
+  else if (250 <= distance && distance <= 300)
+   {
+     distancegroup = 6;
+   }
+  else if (300 <= distance)
+   {
+     distancegroup = 0;
+   }
+   Serial.print("Distancegroup: ");
+   Serial.println (distancegroup);
+  return distancegroup;
+
+}
+
+void playeffect(int distancegroup)
+{
+  const int hap_1 = 15;
+  const int hap_2 = 14;
+  const int hap_3 = 13;
+  const int hap_4 = 52;
+  const int hap_5 = 53;
+  const int hap_6 = 55;
+  const int motor_hap = 1;
   switch (distancegroup)
   {
    case 1:
-   Serial.println("About to start, for under 5cm");
-     if (measurecount < 1)
+     if (measurecount <= 1)
      {
        measurecount++;
        break;
      }
-     motorz.playFullHaptic(3, 15);
-     Serial.println("Under 5 cm");
+     Serial.println("playing1");
+     motorz.playFullHaptic(motor_hap, hap_1);
      measurecount = 0;
      break;
      
    case 2:
-     if (measurecount < 2)
+     if (measurecount <= 1 )
      {
        measurecount++;
        break;
      }
-     motor.playFullHaptic(3, 47);
-     Serial.println("Under 10 cm");
+     Serial.println("playing2");
+     motorz.playFullHaptic(motor_hap, hap_2);
      measurecount = 0;
      break;
      
     case 3:
-     if (measurecount < 4)
+     if (measurecount <= 1)
      {
        measurecount++;
        break;
      }
-     motor.playFullHaptic(3, 48);
-     Serial.println("Under 15 cm");
+     Serial.println("playing3");
+     motorz.playFullHaptic(motor_hap, hap_3);
      measurecount=0;
      break;
      
      case 4:
-     if (measurecount < 4)
+     if (measurecount <= 1)
      {
        measurecount++;
        break;
      }
-     motor.playFullHaptic(3, 49);
-     Serial.println("Under 20 cm");
+     Serial.println("playing4");
+     motorz.playFullHaptic(motor_hap, hap_4);
      measurecount=0;
      break;
      
      case 5:
-     if (measurecount < 9)
+     if (measurecount <= 1)
      {
        measurecount++;
        break;
      }
-     motor.playFullHaptic(3, 50);
-     Serial.println("Under 30 cm");
+     Serial.println("playing5");
+     motorz.playFullHaptic(motor_hap, hap_5);
      measurecount=0;
      break;
      
      case 6:
-     if (measurecount < 9)
+     if (measurecount <= 1)
      {
        measurecount++;
        break;
      }
-     motor.playFullHaptic(3, 51);
-     Serial.println("Over 30 cm");
+     Serial.println("playing6");
+     motorz.playFullHaptic(motor_hap, hap_6);
      measurecount=0;
      break;
  }

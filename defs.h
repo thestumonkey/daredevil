@@ -51,6 +51,10 @@
 #define GR_SEL1		        A0
 #define GR_SEL2		        A1
 
+// long range
+//#define SDA   A4
+//#define SCL   A5
+
 
 // Input
 #define OVCF			0x8000
