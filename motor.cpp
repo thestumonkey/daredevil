@@ -164,7 +164,7 @@ void Motor::playFullHaptic( uint8_t library, uint8_t effect )
 	Serial.println( getMotorName() );
 
 	drv2605.playFullHaptic( library, effect, currentMotor.rated_duty, currentMotor.max_duty, compensation, backEMF, feedback );
-
+Serial.println("after");
 	digitalWrite( DRV_2605_EN,	LOW );	// Disable the DRV2605 (low power mode)
 	digitalWrite( SW_MOS_DRV,	HIGH );	// Select +3.3V and MOS- 
 	digitalWrite( SW_LRA_M,		LOW );	// Select M+ and M-

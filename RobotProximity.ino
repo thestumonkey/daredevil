@@ -1,23 +1,3 @@
-// This Software demo for the Precision Microdrives Haptic Shield is provided
-// under the MIT License
-
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to 
-// deal in the Software without restriction, including without limitation the
-// rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-// sell copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
 
 // Include system headers
 #define __PROG_TYPES_COMPAT__
@@ -40,7 +20,6 @@ Motor motor = Motor();
 
 int maximumRange = 200;             // Maximum range needed
 int minimumRange = 0;               // Minimum range needed
-long duration, distance;            // Duration used to calculate distance
 int distancegroup, measurecount;
 
 void setup()
@@ -63,15 +42,16 @@ void setup()
 
 void loop()
 {
-  Serial.println("Measuring distance");
-  measuredistance();
-  printdistance();
-  Serial.println("Getting distance group");
-  getdistancegroup();
-  Serial.println("Playing effect");
-  playeffect();
+//  Serial.println("-Measuring distance");
+  long distance = measuredistance();
+  printdistance(distance);
+//  Serial.println("-Getting distance group");
+//  getdistancegroup(distance);
+//  Serial.println("-Playing effect");
+//  playeffect();
+//  long long_distance = getLongDistance();
  
-  delay(100);
+  delay(500);
   
 }
 
@@ -94,11 +74,11 @@ void setupPins()
 }	// setupPins
 
 
-void measuredistance()
+long measuredistance()
 {
 
  const int pingPin = 12;
- 
+ long duration, distance;
   /* The following trigPin/echoPin cycle is used to determine the
  distance of the nearest object by bouncing soundwaves off of it. */ 
  
@@ -111,31 +91,47 @@ void measuredistance()
  digitalWrite(pingPin, HIGH);
  delayMicroseconds(10); 
  
- digitalWrite(pingPin, LOW);
+ analogWrite(pingPin, LOW);
 
  pinMode(pingPin, INPUT);
  duration = pulseIn(pingPin, HIGH);
  
  //Calculate the distance (in cm)
  distance = duration/ 29 / 2;
+ return distance;
 }
 
-void printdistance()
+long getLongDistance()
 {
- if (distance >= maximumRange || distance <= minimumRange)
- {
-    Serial.println("Error: Out of Range");
- }
- 
- else 
- {
+  const int analogPin = 1;
+  const int configPin = 6;
+  const int digitalPin = 7;
+  digitalWrite(configPin, HIGH);
+  int digital = digitalRead(digitalPin);
+  Serial.print("EZ-digital: ");
+  Serial.println(digital);
+  int analog = analogRead(analogPin);
+  Serial.print("EZ-analog: ");
+  Serial.println(analog);
+  
+}
+
+void printdistance(long distance)
+{
+// if (distance >= maximumRange || distance <= minimumRange)
+// {
+//    Serial.println("Error: Out of Range");
+// }
+// 
+// else 
+// {
    Serial.print("Distance: ");
    Serial.print(distance);
    Serial.println(" cm");
- }
+// }
 }
 
-void getdistancegroup()
+void getdistancegroup(long distance)
 {
    if (0 <= distance && distance <= 5)
    {
