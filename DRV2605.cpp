@@ -14,7 +14,22 @@
 
 DRV2605::DRV2605()
 {
-	sbi( TWCR, TWEN );	// Enable TWI
+	TWCR |= (1<< TWEN );	// Enable TWI
+}
+
+void DRV2605::init()
+{
+	return;
+	// First time init
+	I2C_Write( ADDR_MODE,			MODE_ACTIVE );	// Exit standby
+	I2C_Write( ADDR_RTP_INPUT,		0x00 );
+	I2C_Write( ADDR_WAV_SEQ1,		0x01 );
+	I2C_Write( ADDR_WAV_SEQ2,		0x00 );
+	I2C_Write( ADDR_ODT,			0x00 );
+	I2C_Write( ADDR_SPT,			0x00 );
+	I2C_Write( ADDR_SNT,			0x00 );
+	I2C_Write( ADDR_BRT,			0x00 );
+	I2C_Write( ADDR_A2H_MAX_IN,		0x64 );
 }
 
 bool DRV2605::autoCal( uint8_t ratedVoltage, uint8_t overdriveClamp, boolean LRA, uint8_t* compensation, uint8_t* backEMF, uint8_t* feedback )
@@ -23,7 +38,7 @@ bool DRV2605::autoCal( uint8_t ratedVoltage, uint8_t overdriveClamp, boolean LRA
 	setDefaults();
 
 	// Work out control registers
-	uint8_t fb = FB_BRAKE_4x | FB_LOOP_FAST;// | (LRA ? FB_MODE_LRA : FB_MODE_ERM);
+	uint8_t fb = FB_BRAKE_4x | FB_LOOP_FAST;
 	uint8_t control1 = DEFAULT_CTRL1;
 
 	if( LRA )
@@ -49,7 +64,7 @@ bool DRV2605::autoCal( uint8_t ratedVoltage, uint8_t overdriveClamp, boolean LRA
 	do
 	{
 		I2C_Read( ADDR_GO, &fb );
-		delay( 100 );                            //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		delay( 100 ); 
 		++control1;
 	} while( fb & GO && control1 < 100 );
 
@@ -95,33 +110,34 @@ void DRV2605::playFullHaptic( uint8_t library, uint8_t effect, uint8_t ratedVolt
 	else
 		control3 &= ~CTRL3_ERM_OPEN;	// Clear bit 5 for closed loop operation
 
-	noInterrupts();                   // Protect I2C transaction from MPR121 interrupt.
+	// Protect I2C transaction from MPR121 interrupt.
+	noInterrupts();
 	i2cSendStart();
-	i2cSendByte(DRV2605_ADDR_WR);    // write 0xB4
-        i2cSendByte(0x16);	         // write first register address
-        i2cSendByte(ratedVoltage);
-        i2cSendByte(overdriveClamp);
-        i2cSendByte(compensation);
-        i2cSendByte(backEMF);
-        i2cSendByte(fb);
-	i2cSendByte(control1);
-	i2cSendByte(control2);
-	i2cSendByte(control3);
-        i2cSendStop();
+	i2cSendByte( DRV2605_ADDR_WR );	        // write 0xB4
+	i2cSendByte( 0x16 );			// write first register address
+	i2cSendByte( ratedVoltage );
+	i2cSendByte( overdriveClamp );
+	i2cSendByte( compensation );
+	i2cSendByte( backEMF );
+	i2cSendByte( fb );
+	i2cSendByte( control1 );
+	i2cSendByte( control2 );
+	i2cSendByte( control3 );
+	i2cSendStop();
 	i2cSendStart();
-	i2cSendByte(DRV2605_ADDR_WR);    // write 0xB4
-        i2cSendByte(0x03);	         // write first register address
-	i2cSendByte(library);
-	i2cSendByte(effect);
-	i2cSendByte(MODE_ACTIVE);
-        i2cSendStop();
-        interrupts();
+	i2cSendByte( DRV2605_ADDR_WR );	// write 0xB4
+	i2cSendByte( 0x03 );			// write first register address
+	i2cSendByte( library );
+	i2cSendByte( effect );
+	i2cSendByte( MODE_ACTIVE );
+	i2cSendStop();
+	interrupts();
 
-	I2C_Write( ADDR_MODE,			MODE_ACTIVE );     //0x01
+	I2C_Write( ADDR_MODE, MODE_ACTIVE );     //0x01
 
 	fb = GO;
 	control1 = 0;
-	I2C_Write( ADDR_GO,			GO );
+	I2C_Write( ADDR_GO, GO );
 	do
 	{
 		// For effect 118, we have to stop by clearing the GO bit.
@@ -142,116 +158,114 @@ void DRV2605::playFullHaptic( uint8_t library, uint8_t effect, uint8_t ratedVolt
 	} while ( fb & GO );
 }
 
+
+
+void DRV2605::Audio( uint8_t LRA_AUDIO,  uint8_t ratedVoltage, uint8_t overdriveClamp, uint8_t compensation, uint8_t backEMF )
+{
+
+	noInterrupts();                   
+ 
+  i2cSendStart();
+	i2cSendByte( DRV2605_ADDR_WR);	        // write 0xB4
+	i2cSendByte( GO);                       //out of standby write 0x01 to 0x00 reg	              
+  i2cSendByte( AUDIO_MODE );              //audio mode value 0x04
+  i2cSendByte( MODE_INT_TRIG);            //reg adress 0x02 No Real time playback out of standby write 0x01 to 0x00 reg               
+  i2cSendStop();
+
+  i2cSendStart();
+  i2cSendByte( DRV2605_ADDR_WR);          // write 0xB4
+  i2cSendByte( 0x12 );                    // write first register address
+  i2cSendByte( DEFAULT_A2H_MIN_IN );      // addr 0x12 AUDIO MIN INPUT LEVEL 1.8V * 32 / 255 ~225mV
+  i2cSendByte( DEFAULT_A2H_MAX_IN);                    //addr 0x13 AUDIO MAX INPUT LEVEL 1.8V * 128 / 255 ~900mV 
+  i2cSendByte( DEFAULT_A2H_MIN_OUT );                    //addr 0x14 AUDIO MIN OUTPUT DRIVE  reg /255 * 100%
+  i2cSendByte( DEFAULT_A2H_MAX_OUT );                   //addr 0x15 AUDIO MAX OUTPUT DRIVE reg /255 * 100%
+	i2cSendByte( ratedVoltage );            //addr 0x16
+	i2cSendByte( overdriveClamp );          //addr 0x17
+	i2cSendByte( compensation );            //addr 0x18
+	i2cSendByte( backEMF );                 //addr 0x19
+ 	
+ 	if(LRA_AUDIO) 
+ 	  i2cSendByte( FB_MODE_LRA );           //addr 0x1A
+ 	else   
+    i2cSendByte( FB_MODE_ERM );             //addr 0x1A
+
+	i2cSendByte( AUDIO_CTRL1);                //addr 0x1B
+	i2cSendByte( AUDIO_CTRL2 );                //addr 0x1C
+	i2cSendByte( AUDIO_CTRL3 );                //addr 0x1D
+	i2cSendStop();                          
+
+	interrupts();
+}
+
+
 void DRV2605::setDefaults()
 { 
-	noInterrupts();                   // Protect I2C transaction from MPR121 interrupt.
+	// Protect I2C transaction from MPR121 interrupt.
+	noInterrupts();                   
 	i2cSendStart();
-      	i2cSendByte(DRV2605_ADDR_WR);    // write 0xB4
-      	i2cSendByte(0x01);    // write 0xB4
-      
-      	i2cSendByte(		DEFAULT_MODE );
-	i2cSendByte(		DEFAULT_RTP_INPUT );
-	i2cSendByte(		DEFAULT_LIBRARY );
-	i2cSendByte(		DEFAULT_WAV_SEQ );
-	i2cSendByte(		DEFAULT_WAV_SEQ );
-	i2cSendByte(		DEFAULT_WAV_SEQ );
-	i2cSendByte(		DEFAULT_WAV_SEQ );
-	i2cSendByte(		DEFAULT_WAV_SEQ );
-	i2cSendByte(		DEFAULT_WAV_SEQ );
-	i2cSendByte(		DEFAULT_WAV_SEQ );
-	i2cSendByte(		DEFAULT_WAV_SEQ );
-	i2cSendByte(		DEFAULT_GO );
-	i2cSendByte(		DEFAULT_OD_OFFSET );
-	i2cSendByte(		DEFAULT_ST_OFFSETP );
-	i2cSendByte(		DEFAULT_ST_OFFSETN );
-	i2cSendByte(		DEFAULT_BT_OFFSET );
-	i2cSendByte(		DEFAULT_A2H_CTRL );
-	i2cSendByte(		DEFAULT_A2H_MIN_IN );
-	i2cSendByte(		DEFAULT_A2H_MAX_IN );
-	i2cSendByte(	        DEFAULT_A2H_MIN_OUT );
-	i2cSendByte(	        DEFAULT_A2H_MAX_OUT );
-	i2cSendByte(		DEFAULT_RATED_VOLT );
-	i2cSendByte(		DEFAULT_OD_CLAMP );
-	i2cSendByte(		DEFAULT_AC_COMP );
-	i2cSendByte(	        DEFAULT_AC_BACK_EMF );
-	i2cSendByte(		DEFAULT_FEEDBACK );
-	i2cSendByte(		DEFAULT_CTRL1 );
-	i2cSendByte(		DEFAULT_CTRL2 );
-	i2cSendByte(		DEFAULT_CTRL3 );
-	i2cSendByte(		DEFAULT_AC_MEM );
-	i2cSendByte(		DEFAULT_VBAT_VOLT );
-	i2cSendByte(		DEFAULT_LRA_RES );
-        i2cSendStop();
-        interrupts();
- 
-/*
-	I2C_Write( ADDR_MODE,			DEFAULT_MODE );
-	I2C_Write( ADDR_RTP_INPUT,		DEFAULT_RTP_INPUT );
-	I2C_Write( ADDR_LIBRARY,		DEFAULT_LIBRARY );
-	I2C_Write( ADDR_WAV_SEQ1,		DEFAULT_WAV_SEQ );
-	I2C_Write( ADDR_WAV_SEQ2,		DEFAULT_WAV_SEQ );
-	I2C_Write( ADDR_WAV_SEQ3,		DEFAULT_WAV_SEQ );
-	I2C_Write( ADDR_WAV_SEQ4,		DEFAULT_WAV_SEQ );
-	I2C_Write( ADDR_WAV_SEQ5,		DEFAULT_WAV_SEQ );
-	I2C_Write( ADDR_WAV_SEQ6,		DEFAULT_WAV_SEQ );
-	I2C_Write( ADDR_WAV_SEQ7,		DEFAULT_WAV_SEQ );
-	I2C_Write( ADDR_WAV_SEQ8,		DEFAULT_WAV_SEQ );
-	I2C_Write( ADDR_GO,			DEFAULT_GO );
-	I2C_Write( ADDR_ODT,			DEFAULT_OD_OFFSET );
-	I2C_Write( ADDR_SPT,			DEFAULT_ST_OFFSETP );
-	I2C_Write( ADDR_SNT,			DEFAULT_ST_OFFSETN );
-	I2C_Write( ADDR_BRT,			DEFAULT_BT_OFFSET );
-	I2C_Write( ADDR_A2H_CTRL,		DEFAULT_A2H_CTRL );
-	I2C_Write( ADDR_A2H_MIN_IN,		DEFAULT_A2H_MIN_IN );
-	I2C_Write( ADDR_A2H_MAX_IN,		DEFAULT_A2H_MAX_IN );
-	I2C_Write( ADDR_A2H_MIN_OUT,	        DEFAULT_A2H_MIN_OUT );
-	I2C_Write( ADDR_A2H_MAX_OUT,	        DEFAULT_A2H_MAX_OUT );
-	I2C_Write( ADDR_RATED_VOLT,		DEFAULT_RATED_VOLT );
-	I2C_Write( ADDR_OD_CLAMP,		DEFAULT_OD_CLAMP );
-	I2C_Write( ADDR_AC_COMP,		DEFAULT_AC_COMP );
-	I2C_Write( ADDR_AC_BACK_EMF,	        DEFAULT_AC_BACK_EMF );
-	I2C_Write( ADDR_FEEDBACK,		DEFAULT_FEEDBACK );
-	I2C_Write( ADDR_CTRL1,			DEFAULT_CTRL1 );
-	I2C_Write( ADDR_CTRL2,			DEFAULT_CTRL2 );
-	I2C_Write( ADDR_CTRL3,			DEFAULT_CTRL3 );
-	I2C_Write( ADDR_AC_MEM,			DEFAULT_AC_MEM );
-	I2C_Write( ADDR_VBAT_VOLT,		DEFAULT_VBAT_VOLT );
-	I2C_Write( ADDR_LRA_RES,		DEFAULT_LRA_RES );
-*/
+		i2cSendByte( DRV2605_ADDR_WR);	// write 0xB4
+		i2cSendByte( 0x01);			                 // stnadby off
+		i2cSendByte( DEFAULT_MODE );             //addr  0x01
+		i2cSendByte( DEFAULT_RTP_INPUT );        //addr 0x02
+		i2cSendByte( DEFAULT_LIBRARY );          //addr 0x03
+		i2cSendByte( DEFAULT_WAV_SEQ );          //addr 0x04
+		i2cSendByte( DEFAULT_WAV_SEQ );          //addr 0x05
+		i2cSendByte( DEFAULT_WAV_SEQ );          //addr 0x06
+		i2cSendByte( DEFAULT_WAV_SEQ );          //addr 0x07
+		i2cSendByte( DEFAULT_WAV_SEQ );          //addr 0x08
+		i2cSendByte( DEFAULT_WAV_SEQ );          //addr 0x09
+		i2cSendByte( DEFAULT_WAV_SEQ );          //addr 0x0A
+		i2cSendByte( DEFAULT_WAV_SEQ );          //addr 0x0B
+		i2cSendByte( DEFAULT_GO );               //addr 0x0C
+		i2cSendByte( DEFAULT_OD_OFFSET );        //addr 0x0D
+		i2cSendByte( DEFAULT_ST_OFFSETP );       //addr 0x0E
+		i2cSendByte( DEFAULT_ST_OFFSETN );       //addr 0x0F
+		i2cSendByte( DEFAULT_BT_OFFSET );        //addr 0x10
+		i2cSendByte( DEFAULT_A2H_CTRL );         //addr 0x11
+		i2cSendByte( DEFAULT_A2H_MIN_IN );       //addr 0x12
+		i2cSendByte( DEFAULT_A2H_MAX_IN );       //addr 0x13
+		i2cSendByte( DEFAULT_A2H_MIN_OUT );      //addr 0x14
+		i2cSendByte( DEFAULT_A2H_MAX_OUT );      //addr 0x15
+		i2cSendByte( DEFAULT_RATED_VOLT );       //addr 0x16
+		i2cSendByte( DEFAULT_OD_CLAMP );         //addr 0x17
+		i2cSendByte( DEFAULT_AC_COMP );          //addr 0x18
+		i2cSendByte( DEFAULT_AC_BACK_EMF );      //addr 0x19
+		i2cSendByte( DEFAULT_FEEDBACK );         //addr 0x1A
+		i2cSendByte( DEFAULT_CTRL1 );            //addr 0x1B
+		i2cSendByte( DEFAULT_CTRL2 );            //addr 0x1C
+		i2cSendByte( DEFAULT_CTRL3 );            //addr 0x1D
+		i2cSendByte( DEFAULT_AC_MEM );           //addr 0x1E
+		i2cSendByte( DEFAULT_VBAT_VOLT );        //addr 0x1F
+		i2cSendByte( DEFAULT_LRA_RES );          //addr 0x20
+	i2cSendStop();
+	interrupts();
 }
 
 void DRV2605::I2C_Read( uint8_t address, uint8_t *data )
 {
 	noInterrupts(); // Protect I2C transaction from MPR121 interrupt, timer0, and usart
-        
-        i2cSendStart();                  // start
+
+	i2cSendStart();                  // start
 	i2cSendByte(DRV2605_ADDR_WR);	 // write 0xB4
 	i2cSendByte(address);	         // write register address
 	i2cSendStart();                  // repeated start
 	i2cSendByte(DRV2605_ADDR_RD);	 // write 0xB5
 
-        data[0] = i2cReceiveByte(0);    // NACK	
-/*
-        uint8_t numBytes = 1;
-        for (uint8_t i=0; i<numBytes; ++i) {
-                data[i] = i2cReceiveByte(i<numBytes-1); //ACK all but last byte.
- 	}
-*/
+    data[0] = i2cReceiveByte(0);    // NACK	
 	i2cSendStop();
-	cbi(TWCR, TWEN);	// Disable TWI
-	sbi(TWCR, TWEN);	// Enable TWI
-	
-        interrupts();
+	TWCR &=~(1<<TWEN);	// Disable TWI
+	TWCR |= (1<<TWEN);	// Enable TWI
 
+	interrupts();
 }
 
 void DRV2605::I2C_Write( uint8_t address, uint8_t data )
 {
 	noInterrupts(); // Protect I2C transaction from MPR121 interrupt.
  	i2cSendStart();
-	i2cSendByte(DRV2605_ADDR_WR);    // write 0xB4
-  	i2cSendByte(address);	         // write register address
-  	i2cSendByte(data);
+	i2cSendByte( DRV2605_ADDR_WR );    // write 0xB4
+	i2cSendByte( address );	         // write register address
+	i2cSendByte( data );
 	i2cSendStop();
-        interrupts();
+	interrupts();
 }

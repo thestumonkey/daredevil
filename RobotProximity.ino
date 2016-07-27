@@ -13,14 +13,17 @@
 // Include our headers
 #include "Metro.h"
 #include "motor.h"
+#include "defs.h"
 
 // Init timer for 2s, and auto-reset when we get a positive check
 Metro timer( 2000, 1 );
-Motor motor = Motor();
+Motor motorz = Motor();
 
 int maximumRange = 200;             // Maximum range needed
 int minimumRange = 0;               // Minimum range needed
 int distancegroup, measurecount;
+
+
 
 void setup()
 {
@@ -33,8 +36,7 @@ void setup()
 	i2cInit( 200 );
 	
 	// Set up the motor
-	motor.selectMotor( 2 );
-	motor.autoCalibrate();
+	motor.init( KEY_MOTOR_LRA);
 
 	// Ensure any time for calibration is ignored.
 	timer.reset();
@@ -46,9 +48,9 @@ void loop()
   long distance = measuredistance();
   printdistance(distance);
 //  Serial.println("-Getting distance group");
-//  getdistancegroup(distance);
+  getdistancegroup(distance);
 //  Serial.println("-Playing effect");
-//  playeffect();
+  playeffect();
 //  long long_distance = getLongDistance();
  
   delay(500);
@@ -57,20 +59,31 @@ void loop()
 
 void setupPins()
 {
-	pinMode( SW_LRA_M,		OUTPUT );	// Output for switching LRA+/- v.s. M+/-
-	pinMode( SW_MOS_DRV,	        OUTPUT );	// Output for switching +3.3V/MOS- v.s. DRV+/-
-	pinMode( DRV_2605_EN,	        OUTPUT );	// Output for ERV2605 ENable
-	pinMode( PWM_OUT,		OUTPUT );	// Output for PWM
-        pinMode( TRIGPIN,               OUTPUT);
-        pinMode( ECHOPIN,               INPUT);
+	 pinMode( LRA_SEL,  OUTPUT ); // Output for LRA  (0 = connected)
+  pinMode( ERM_SEL, OUTPUT ); // Output for ERM  (0 = connected)
+  pinMode( GRIP_SEL,  OUTPUT ); // Output for GRIP (0 = connected)
+  pinMode( SRC_SEL, OUTPUT ); // Output for switching DRV(1) or MOSFET(0)
+  pinMode( DRV_2605_EN, OUTPUT ); // Output for ERV2605 ENable
+  pinMode( PWM_OUT, OUTPUT ); // Output for PWM
+  pinMode( GR_SEL1, OUTPUT ); // Motor select 1
+  pinMode( GR_SEL2, OUTPUT ); // Motor select 2
 
-	digitalWrite( SW_LRA_M,		LOW );	// Select M+ and M- 
-	digitalWrite( SW_MOS_DRV,	HIGH );	// Select +3.3V and MOS- 
-	digitalWrite( DRV_2605_EN,	LOW );	// Disable the DRV2605 (low power mode)
-	digitalWrite( PWM_OUT,		LOW );	// PWM output low for now 
+  pinMode( IRQ_PIN, INPUT );
 
-	pinMode( MOTOR_PIN_0,	OUTPUT );	// Motor select 1
-	pinMode( MOTOR_PIN_1,	OUTPUT );	// Motor select 2
+  pinMode( TRIGPIN,               OUTPUT);
+
+  digitalWrite( LRA_SEL,          HIGH );         // SelectLRA
+  digitalWrite( ERM_SEL,          HIGH );         // ERM disconnected
+  digitalWrite( GRIP_SEL,         HIGH );         // GRIP disconnected
+  digitalWrite( SRC_SEL,          HIGH );         // DRV connected
+  digitalWrite( DRV_2605_EN,  LOW );          // Disable the DRV2605 (low power mode)
+  digitalWrite( PWM_OUT,    LOW );          // PWM output low for now 
+  
+
+  digitalWrite( GR_SEL1,  LOW );          // select motor 0
+  digitalWrite( GR_SEL2,  LOW );          //  
+
+  digitalWrite( IRQ_PIN, HIGH );
 }	// setupPins
 
 
@@ -172,12 +185,13 @@ void playeffect()
   switch (distancegroup)
   {
    case 1:
+   Serial.println("About to start, for under 5cm");
      if (measurecount < 1)
      {
        measurecount++;
        break;
      }
-     motor.playFullHaptic(3, 15);
+     motorz.playFullHaptic(3, 15);
      Serial.println("Under 5 cm");
      measurecount = 0;
      break;
@@ -238,3 +252,4 @@ void playeffect()
      break;
  }
 }
+

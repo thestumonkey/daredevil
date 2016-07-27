@@ -26,4 +26,7 @@
 
 int freeRAM();
 
+void dumpSettings();
+void printFirmwareInfo();
+
 #endif // include_debug_h

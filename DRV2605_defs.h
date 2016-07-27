@@ -73,13 +73,15 @@
 #define MODE_ACTIVE			0x00
 #define MODE_STANDBY		0x40
 #define MODE_RESET			0x80
+
+
 // - Mode definitions
 #define MODE_INT_TRIG		0x00
 #define MODE_EXT_TRIG_EDGE	0x01
 #define MODE_EXT_TRIG_LVL	0x02
 #define MODE_PWM_ANALOG		0x03
-#define MODE_A2H			0x04
-#define MODE_RTP			0x05
+#define MODE_A2H		0x04
+#define MODE_RTP		0x05
 #define MODE_DIAGNOSTICS	0x06
 #define MODE_AUTOCAL		0x07
 
@@ -170,30 +172,37 @@
 #define CTRL3_LRA_OPEN		0x01
 #define CTRL3_LRA_CLOSED	0x00		
 
-
 // Auto calibration 
-#define AC_TIME_150ms		0x00
-#define AC_TIME_200ms		0x10
-#define AC_TIME_500ms		0x20
-#define AC_TIME_1000ms		0x30
+#define AC_TIME_150ms		    0x00
+#define AC_TIME_200ms		    0x10
+#define AC_TIME_500ms		    0x20
+#define AC_TIME_1000ms		  0x30
 
+//Audio to Haptic
+#define AUDIO_MODE		    0x04	// Addr 0x01 - for Audio to Haptic
+
+#define AUDIO_CTRL1		    0x20	// Addr 0x1B Boost = 1, ACcoulpe =1,  
+#define AUDIO_CTRL2         0xFF  // Addr 0x1C No Bidir
+#define AUDIO_CTRL3         0xA3  // Addr 0x1D 4% noise gate, ERM_OPEN_LOOP, N_PWM_ANALOG, LRA_OPEN_LOOP
 
 // Defaults
-#define DEFAULT_STATUS		0xA0	// Addr 0x00
-#define DEFAULT_MODE		0x00	// Addr 0x01 - Set default to be active
-#define DEFAULT_RTP_INPUT	0x00	// Addr 0x02
-#define DEFAULT_LIBRARY		0x00	// Addr 0x03
-#define DEFAULT_WAV_SEQ		0x01	// Addr 0x04#
-#define DEFAULT_GO			0x00	// Addr 0x0C
-#define DEFAULT_OD_OFFSET	0x00	// Addr 0x0D
-#define DEFAULT_ST_OFFSETP	0x00	// Addr 0x0E
-#define DEFAULT_ST_OFFSETN	0x00	// Addr 0x0F
-#define DEFAULT_BT_OFFSET	0x00	// Addr 0x10
-#define DEFAULT_A2H_CTRL	0x05	// Addr 0x11
-#define DEFAULT_A2H_MIN_IN	0x19	// Addr 0x12
-#define DEFAULT_A2H_MAX_IN	0xFF	// Addr 0x13
-#define DEFAULT_A2H_MIN_OUT	0x19	// Addr 0x14
-#define DEFAULT_A2H_MAX_OUT	0xFF	// Addr 0x15
+#define DEFAULT_STATUS		  0xA0	// Addr 0x00
+#define DEFAULT_MODE		  0x00	// Addr 0x01 - Set default to be active
+#define DEFAULT_RTP_INPUT	  0x00	// Addr 0x02
+#define DEFAULT_LIBRARY		  0x00	// Addr 0x03
+#define DEFAULT_WAV_SEQ		  0x01	// Addr 0x04
+#define DEFAULT_GO		      0x00	// Addr 0x0C
+#define DEFAULT_OD_OFFSET	  0x00	// Addr 0x0D
+#define DEFAULT_ST_OFFSETP	  0x00	// Addr 0x0E
+#define DEFAULT_ST_OFFSETN	  0x00	// Addr 0x0F
+#define DEFAULT_BT_OFFSET	  0x00	// Addr 0x10
+
+#define DEFAULT_A2H_CTRL	0x05	// addr 0x11 peak 20ms, LPF = 125Hz
+#define DEFAULT_A2H_MIN_IN	0x25	// addr 0x12 AUDIO MIN INPUT LEVEL 1.8V * 37 / 255 ~261mV
+#define DEFAULT_A2H_MAX_IN	0x80	// addr 0x13 AUDIO MAX INPUT LEVEL 1.8V * 128 / 255 ~900mV 
+#define DEFAULT_A2H_MIN_OUT	0x00	// addr 0x14 AUDIO MIN OUTPUT DRIVE  reg /255 * 100%
+#define DEFAULT_A2H_MAX_OUT	0xFF	// addr 0x15 AUDIO MAX OUTPUT DRIVE reg /255 * 100%
+
 #define DEFAULT_RATED_VOLT	0x3B	// Addr 0x16
 #define DEFAULT_OD_CLAMP	0x89	// Addr 0x17
 #define DEFAULT_AC_COMP		0x0C	// Addr 0x18
